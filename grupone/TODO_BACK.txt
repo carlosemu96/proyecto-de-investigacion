@@ -1,0 +1,38 @@
+TODO BACKEND - Informacion pendiente y mejoras recomendadas
+
+1) Definiciones de negocio necesarias
+- Catalogo oficial de estados de vehiculo (ej. ACTIVO, EN_TALLER, FUERA_SERVICIO).
+- Catalogo oficial de estados de mantenimiento (ej. PLANNED, IN_PROGRESS, COMPLETED, CANCELLED).
+- Severidades y reglas de alertas (LOW, MEDIUM, HIGH, CRITICAL).
+- Politica de calculo de proximo mantenimiento por tipo de vehiculo y kilometraje.
+- Campos obligatorios finales de ficha tecnica del vehiculo.
+
+2) Integraciones futuras a definir
+- Fuente de datos telemetricos/IoT (si aplica) y frecuencia de ingestion.
+- Integracion con sistema actual de inventario/ERP (si existe).
+- Canal de notificaciones (email, WhatsApp, push, in-app).
+
+3) Seguridad (preparacion Keycloak)
+- Definir realm, clients, roles y mapeo de permisos por endpoint.
+- Definir estrategia de autenticacion (OIDC) para web y servicios internos.
+- Habilitar CORS restringido por ambientes.
+- Activar auditoria de usuario autenticado en operaciones criticas.
+
+4) Calidad y arquitectura
+- Agregar DTOs de entrada/salida para desacoplar entidades de API.
+- Estandarizar manejo de errores con codigo interno y trazabilidad.
+- Agregar paginacion y filtros avanzados en listados.
+- Agregar pruebas unitarias y de integracion (Testcontainers para MongoDB).
+- Agregar migraciones/versionado de datos (estrategia de schema evolution).
+
+5) Operacion y observabilidad
+- Definir perfiles por ambiente (dev, qa, prod).
+- Agregar logs estructurados y correlation-id.
+- Definir SLOs (latencia, disponibilidad) y alertas operativas.
+- Definir politica de backup/restore y retencion de datos.
+
+6) Analitica predictiva
+- Definir variables de entrada de modelos (kilometraje, antiguedad, historial, uso).
+- Definir objetivo del modelo (prediccion de falla, fecha sugerida, costo estimado).
+- Definir metrica de calidad minima para modelo en produccion.
+- Diseñar pipeline de entrenamiento/reentrenamiento y monitoreo de drift.
