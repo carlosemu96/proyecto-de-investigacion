@@ -103,6 +103,18 @@ curl 'http://localhost:8080/api/v1/vehicles' \
 
 Una llamada sin token a `/api/v1/**` debe responder `401`.
 
+## Usar Swagger con Keycloak
+
+Swagger UI esta configurado para aceptar tokens JWT.
+
+1. Abre `http://localhost:8080/swagger-ui.html`.
+2. Obtiene un token desde Keycloak usando el ejemplo anterior.
+3. Presiona el boton `Authorize` en Swagger UI.
+4. Pega el token en el campo `bearerAuth`.
+5. Ejecuta los endpoints protegidos desde Swagger.
+
+Pega solo el valor del `access_token`. Swagger agrega el prefijo `Bearer` automaticamente.
+
 ## Roles y Permisos
 
 La API valida tokens JWT emitidos por Keycloak mediante un servidor de recursos OAuth2.

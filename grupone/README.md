@@ -97,6 +97,18 @@ curl 'http://localhost:8080/api/v1/vehicles' \
   -H "Authorization: Bearer $ACCESS_TOKEN"
 ```
 
+## Usar Swagger con Autenticacion
+
+Swagger UI declara el esquema `bearerAuth` para tokens JWT.
+
+1. Abre `http://localhost:8080/swagger-ui.html`.
+2. Obtiene un token desde Keycloak.
+3. Presiona `Authorize`.
+4. Pega el valor del `access_token`.
+5. Ejecuta los endpoints protegidos desde Swagger.
+
+No agregues manualmente el prefijo `Bearer`; Swagger lo agrega automaticamente.
+
 ## Configuracion Relevante
 
 - `MONGODB_URI`: URI de MongoDB.
