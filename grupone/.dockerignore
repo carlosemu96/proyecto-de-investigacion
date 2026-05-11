@@ -1,0 +1,8 @@
+target/
+.git/
+.idea/
+.vscode/
+*.iml
+*.log
+keycloak/postgres/data/
+mongodb/data/
