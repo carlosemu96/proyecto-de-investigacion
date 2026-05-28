@@ -21,6 +21,21 @@ docker compose up -d
 
 La API y el frontend se reconstruyen automaticamente cada vez que se ejecuta `docker compose up -d`, porque los servicios `grupone-api` y `grupone-frontend` usan `pull_policy: build`.
 
+Si necesitas forzar que Docker recree los contenedores y publique el build mas reciente del frontend:
+
+```bash
+docker compose up -d --build --force-recreate
+```
+
+Si sospechas que el navegador esta mostrando una version anterior del frontend, reconstruye la imagen sin cache y recrea el contenedor:
+
+```bash
+docker compose build --no-cache grupone-frontend
+docker compose up -d --force-recreate grupone-frontend
+```
+
+El frontend Docker genera archivos JS/CSS con hash en el nombre y Nginx puede cachearlos por largo plazo. Si tu navegador ya habia cacheado bundles antiguos sin hash, haz un hard refresh despues de recrear el contenedor.
+
 Para ver el estado de los servicios:
 
 ```bash

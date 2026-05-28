@@ -17,6 +17,8 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 
 import { MaintenanceService } from '../../../core/services/maintenance.service';
 import { MaintenanceRecord } from '../../../core/models/maintenance-record.model';
+import { Vehicle } from '../../../core/models/vehicle.model';
+import { VehicleService } from '../../../core/services/vehicle.service';
 import { LoadingSpinnerComponent } from '../../../shared/components/loading-spinner.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state.component';
 import { ConfirmationDialogComponent } from '../../../shared/components/confirmation-dialog.component';
@@ -103,8 +105,14 @@ import { MaintenanceFormComponent } from './maintenance-form.component';
           <table mat-table [dataSource]="filteredRecords" class="w-full" *ngIf="filteredRecords.length">
 
             <ng-container matColumnDef="vehicleId">
-              <th mat-header-cell *matHeaderCellDef>ID Vehículo</th>
-              <td mat-cell *matCellDef="let r">{{ r.vehicleId }}</td>
+              <th mat-header-cell *matHeaderCellDef>Vehículo</th>
+              <td mat-cell *matCellDef="let r">
+                <ng-container *ngIf="vehicleById.get(r.vehicleId) as vehicle; else vehicleIdFallback">
+                  <div class="font-medium">{{ vehicle.plate }}</div>
+                  <div class="text-xs text-gray-500">{{ vehicle.brand }} {{ vehicle.model }}</div>
+                </ng-container>
+                <ng-template #vehicleIdFallback>{{ r.vehicleId }}</ng-template>
+              </td>
             </ng-container>
 
             <ng-container matColumnDef="type">
@@ -162,6 +170,8 @@ import { MaintenanceFormComponent } from './maintenance-form.component';
 export class MaintenanceListComponent implements OnInit, OnDestroy {
   records: MaintenanceRecord[] = [];
   filteredRecords: MaintenanceRecord[] = [];
+  vehicles: Vehicle[] = [];
+  vehicleById = new Map<string, Vehicle>();
 
   loading = false;
   showOverdue = false;
@@ -175,11 +185,13 @@ export class MaintenanceListComponent implements OnInit, OnDestroy {
 
   constructor(
     private maintenanceService: MaintenanceService,
+    private vehicleService: VehicleService,
     private dialog: MatDialog,
     private snackBar: MatSnackBar
   ) {}
 
   ngOnInit(): void {
+    this.loadVehicles();
     this.loadRecords();
   }
 
@@ -201,6 +213,21 @@ export class MaintenanceListComponent implements OnInit, OnDestroy {
         error: () => {
           this.loading = false;
           this.snackBar.open('Error al cargar los registros', 'Cerrar', { duration: 3000 });
+        }
+      });
+  }
+
+  loadVehicles(): void {
+    this.vehicleService.getAll()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: vehicles => {
+          this.vehicles = vehicles;
+          this.vehicleById = new Map(vehicles.map(vehicle => [vehicle.id, vehicle]));
+        },
+        error: () => {
+          this.vehicleById = new Map();
+          this.snackBar.open('Error al cargar los vehículos', 'Cerrar', { duration: 3000 });
         }
       });
   }
