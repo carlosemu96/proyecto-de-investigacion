@@ -1,2 +1,3 @@
 keycloak/postgres/data/
 mongodb/data/
+backups/

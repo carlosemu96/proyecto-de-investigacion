@@ -2,13 +2,14 @@
 
 Repositorio de desarrollo para el sistema de mantenimiento automotriz de Grupo NE.
 
-El entorno local esta preparado para ejecutar la API `grupone`, MongoDB, Keycloak y la base PostgreSQL usada por Keycloak. El `docker-compose.yml` vive en la raiz del repositorio para poder agregar una aplicacion web como otro servicio sin mover la infraestructura compartida.
+El entorno local esta preparado para ejecutar el frontend Angular, la API `grupone`, MongoDB, Keycloak y la base PostgreSQL usada por Keycloak. El `docker-compose.yml` vive en la raiz del repositorio y levanta todos los servicios integrados.
 
 ## Requisitos
 
 - Docker
 - Docker Compose
 - Java 21 y Maven solo si quieres ejecutar la API fuera de Docker
+- Node.js 20 y npm 10 solo si quieres ejecutar el frontend fuera de Docker
 
 ## Levantar Todos los Servicios
 
@@ -18,7 +19,22 @@ Desde la raiz del repositorio:
 docker compose up -d
 ```
 
-La API se reconstruye automaticamente cada vez que se ejecuta `docker compose up -d`, porque el servicio `grupone-api` usa `pull_policy: build` y construye la imagen desde `./grupone`.
+La API y el frontend se reconstruyen automaticamente cada vez que se ejecuta `docker compose up -d`, porque los servicios `grupone-api` y `grupone-frontend` usan `pull_policy: build`.
+
+Si necesitas forzar que Docker recree los contenedores y publique el build mas reciente del frontend:
+
+```bash
+docker compose up -d --build --force-recreate
+```
+
+Si sospechas que el navegador esta mostrando una version anterior del frontend, reconstruye la imagen sin cache y recrea el contenedor:
+
+```bash
+docker compose build --no-cache grupone-frontend
+docker compose up -d --force-recreate grupone-frontend
+```
+
+El frontend Docker genera archivos JS/CSS con hash en el nombre y Nginx puede cachearlos por largo plazo. Si tu navegador ya habia cacheado bundles antiguos sin hash, haz un hard refresh despues de recrear el contenedor.
 
 Para ver el estado de los servicios:
 
@@ -42,6 +58,7 @@ docker compose down
 
 | Servicio | URL / Puerto | Uso |
 | --- | --- | --- |
+| Frontend Grupo NE | `http://localhost:4200` | Aplicacion Angular |
 | API Grupo NE | `http://localhost:8080` | Backend Spring Boot |
 | Swagger UI | `http://localhost:8080/swagger-ui.html` | Documentacion interactiva de la API |
 | OpenAPI JSON | `http://localhost:8080/api-docs` | Especificacion OpenAPI |
@@ -58,13 +75,15 @@ El realm local se llama `grupone` y se importa desde:
 keycloak/import/realm-grupone.json
 ```
 
-La importacion se aplica cuando Keycloak inicia con una base de datos nueva. Si ya existe informacion persistida en PostgreSQL, Keycloak conserva los datos existentes.
+La importacion se aplica cuando Keycloak inicia con una base de datos nueva. Si ya existe informacion persistida en `keycloak/postgres/data`, Keycloak conserva los datos existentes y no vuelve a aplicar cambios del realm import. En ese caso, actualiza el cliente desde la consola admin o recrea la data local si no necesitas conservarla.
 
 Cliente publico para pruebas y para la futura aplicacion web:
 
 ```text
 maintenance-web
 ```
+
+El cliente `maintenance-web` acepta `http://localhost:4200/*` como redirect URI y `http://localhost:4200` como web origin para el frontend Angular.
 
 Cliente de referencia para la API:
 
@@ -102,6 +121,18 @@ curl 'http://localhost:8080/api/v1/vehicles' \
 ```
 
 Una llamada sin token a `/api/v1/**` debe responder `401`.
+
+## Usar el Frontend
+
+Abre `http://localhost:4200`. En modo real, la aplicacion redirige a Keycloak y vuelve al dashboard despues del inicio de sesion.
+
+Usuarios demo para el frontend:
+
+| Usuario | Contrasena |
+| --- | --- |
+| `viewer` | `viewer123` |
+| `manager` | `manager123` |
+| `admin` | `admin123` |
 
 ## Usar Swagger con Keycloak
 
@@ -157,6 +188,9 @@ Estos directorios estan ignorados por Git para evitar subir datos generados por 
 │   ├── providers/
 │   └── themes/
 ├── mongodb/
+├── groupe-frontend-v1/
+│   ├── Dockerfile
+│   └── src/
 └── grupone/
     ├── Dockerfile
     ├── pom.xml
@@ -168,5 +202,5 @@ Estos directorios estan ignorados por Git para evitar subir datos generados por 
 - Ejecuta `docker compose up -d` desde la raiz, no desde `grupone/`.
 - La API dentro de Docker se conecta a MongoDB usando `mongodb://mongodb:27017/grupo_ne_maintenance`.
 - La validacion JWT usa el emisor publico `http://localhost:8081/realms/grupone` y obtiene las llaves desde Keycloak dentro de la red Docker.
-- CORS esta configurado por defecto para `http://localhost:3000`, `http://localhost:5173` y `http://localhost:8080`.
-- Cuando se agregue la aplicacion web, se puede incorporar como otro servicio en el `docker-compose.yml` raiz y usar el cliente Keycloak `maintenance-web`.
+- CORS esta configurado por defecto para `http://localhost:3000`, `http://localhost:4200`, `http://localhost:5173` y `http://localhost:8080`.
+- El frontend Docker sirve el build Angular real con Nginx y fallback a `index.html` para rutas SPA.
