@@ -36,6 +36,19 @@ body {
 }
 
 /* Material Design overrides */
+
+/*
+ * Tailwind Preflight aplica `border-style: solid` + color por defecto a TODOS
+ * los elementos, incluido el custom element <mat-select>. Eso dibujaba un
+ * recuadro alrededor del selector (p. ej. el multiselect de Categorías en
+ * Repuestos) que no coincidía con el resto de campos `appearance="fill"`.
+ * Neutralizamos ese borde heredado para que el select use solo el estilo de
+ * Angular Material.
+ */
+.mat-mdc-select {
+  border: 0;
+}
+
 .mat-mdc-card {
   border-radius: 8px !important;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;

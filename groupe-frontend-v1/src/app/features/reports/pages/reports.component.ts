@@ -102,9 +102,20 @@ import { LoadingSpinnerComponent } from '../../../shared/components/loading-spin
 
           <table mat-table [dataSource]="reportData" class="w-full">
 
-            <ng-container matColumnDef="vehicleId">
-              <th mat-header-cell *matHeaderCellDef>ID Vehículo</th>
-              <td mat-cell *matCellDef="let r">{{ r.vehicleId }}</td>
+            <ng-container matColumnDef="plate">
+              <th mat-header-cell *matHeaderCellDef>Patente</th>
+              <td mat-cell *matCellDef="let r">{{ vehiclePlate(r.vehicleId) }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="vehicle">
+              <th mat-header-cell *matHeaderCellDef>Vehículo</th>
+              <td mat-cell *matCellDef="let r">
+                <ng-container *ngIf="vehicleFor(r.vehicleId) as vehicle; else unavailableVehicle">
+                  <div class="font-medium">{{ vehicle.brand }} {{ vehicle.model }}</div>
+                  <div class="text-xs text-gray-500">{{ vehicle.year }}</div>
+                </ng-container>
+                <ng-template #unavailableVehicle>No disponible</ng-template>
+              </td>
             </ng-container>
 
             <ng-container matColumnDef="type">
@@ -169,7 +180,9 @@ export class ReportsComponent implements OnInit, OnDestroy {
   filterVehicle = '';
   filterType = '';
 
-  reportColumns = ['vehicleId', 'type', 'plannedDate', 'status', 'totalCost', 'notes'];
+  vehiclesById = new Map<string, Vehicle>();
+
+  reportColumns = ['plate', 'vehicle', 'type', 'plannedDate', 'status', 'totalCost', 'notes'];
 
   private destroy$ = new Subject<void>();
 
@@ -182,7 +195,10 @@ export class ReportsComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.vehicleService.getAll()
       .pipe(takeUntil(this.destroy$))
-      .subscribe(data => this.vehicles = data);
+      .subscribe(data => {
+        this.vehicles = data;
+        this.vehiclesById = new Map(data.map(vehicle => [vehicle.id, vehicle]));
+      });
 
     this.maintenanceService.getAll()
       .pipe(takeUntil(this.destroy$))
@@ -229,12 +245,31 @@ export class ReportsComponent implements OnInit, OnDestroy {
     return map[status] ?? status;
   }
 
+  vehicleFor(vehicleId: string): Vehicle | undefined {
+    return this.vehiclesById.get(vehicleId);
+  }
+
+  vehiclePlate(vehicleId: string): string {
+    return this.vehicleFor(vehicleId)?.plate ?? 'No disponible';
+  }
+
+  vehicleLabel(vehicleId: string): string {
+    const vehicle = this.vehicleFor(vehicleId);
+    return vehicle ? `${vehicle.brand} ${vehicle.model} ${vehicle.year}` : 'No disponible';
+  }
+
   exportCSV(): void {
     if (!this.reportData.length) return;
-    const header = 'vehicleId,tipo,fechaPlanificada,estado,costoTotal,notas';
-    const rows = this.reportData.map(r =>
-      `${r.vehicleId},${r.type},${r.plannedDate},${r.status},${r.totalCost},"${r.notes}"`
-    );
+    const header = 'patente,vehiculo,tipo,fechaPlanificada,estado,costoTotal,notas';
+    const rows = this.reportData.map(r => [
+      this.vehiclePlate(r.vehicleId),
+      this.vehicleLabel(r.vehicleId),
+      r.type,
+      r.plannedDate,
+      r.status,
+      r.totalCost,
+      r.notes
+    ].map(value => this.csvValue(value)).join(','));
     const csv = [header, ...rows].join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
@@ -248,5 +283,10 @@ export class ReportsComponent implements OnInit, OnDestroy {
 
   exportPDF(): void {
     this.snackBar.open('Exportación PDF próximamente — integre jsPDF para producción.', 'Cerrar', { duration: 4000 });
+  }
+
+  private csvValue(value: string | number | null | undefined): string {
+    const text = String(value ?? '');
+    return `"${text.replace(/"/g, '""')}"`;
   }
 }

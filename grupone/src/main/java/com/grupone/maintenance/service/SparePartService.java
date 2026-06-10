@@ -5,7 +5,9 @@ import com.grupone.maintenance.model.SparePart;
 import com.grupone.maintenance.repository.SparePartRepository;
 import org.springframework.stereotype.Service;
 
+import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 public class SparePartService {
@@ -18,6 +20,25 @@ public class SparePartService {
 
     public List<SparePart> findAll() {
         return sparePartRepository.findAll();
+    }
+
+    public List<SparePart> findAll(List<String> categories) {
+        List<String> normalizedCategories = normalizeCategories(categories);
+        if (normalizedCategories.isEmpty()) {
+            return findAll();
+        }
+        return sparePartRepository.findByCategoryIn(normalizedCategories);
+    }
+
+    public List<String> findCategories() {
+        return sparePartRepository.findAll().stream()
+                .map(SparePart::getCategory)
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(category -> !category.isBlank())
+                .distinct()
+                .sorted(Comparator.naturalOrder())
+                .toList();
     }
 
     public List<SparePart> findLowStock() {
@@ -68,5 +89,17 @@ public class SparePartService {
     public void delete(String id) {
         SparePart existing = findById(id);
         sparePartRepository.delete(existing);
+    }
+
+    private List<String> normalizeCategories(List<String> categories) {
+        if (categories == null) {
+            return List.of();
+        }
+        return categories.stream()
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(category -> !category.isBlank())
+                .distinct()
+                .toList();
     }
 }
