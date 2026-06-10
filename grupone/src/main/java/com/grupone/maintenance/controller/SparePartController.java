@@ -19,13 +19,18 @@ public class SparePartController {
     }
 
     @GetMapping
-    public List<SparePart> getAll() {
-        return sparePartService.findAll();
+    public List<SparePart> getAll(@RequestParam(required = false) List<String> categories) {
+        return sparePartService.findAll(categories);
     }
 
     @GetMapping("/low-stock")
     public List<SparePart> getLowStock() {
         return sparePartService.findLowStock();
+    }
+
+    @GetMapping("/categories")
+    public List<String> getCategories() {
+        return sparePartService.findCategories();
     }
 
     @GetMapping("/{id}")

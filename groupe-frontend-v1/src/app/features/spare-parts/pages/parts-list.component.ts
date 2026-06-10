@@ -9,6 +9,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
@@ -35,6 +36,7 @@ import { StockMovementComponent } from './stock-movement.component';
     MatIconModule,
     MatFormFieldModule,
     MatInputModule,
+    MatSelectModule,
     MatChipsModule,
     MatMenuModule,
     MatSnackBarModule,
@@ -58,11 +60,31 @@ import { StockMovementComponent } from './stock-movement.component';
 
       <mat-card>
         <mat-card-content class="p-4">
-          <mat-form-field class="w-full md:w-64">
-            <mat-label>Buscar repuestos</mat-label>
-            <input matInput [(ngModel)]="searchTerm" (ngModelChange)="applyFilter()" placeholder="Nombre, SKU, categoría…" />
-            <mat-icon matSuffix>search</mat-icon>
-          </mat-form-field>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <mat-form-field class="w-full">
+              <mat-label>Buscar repuestos</mat-label>
+              <input matInput [(ngModel)]="searchTerm" (ngModelChange)="applyFilter()" placeholder="Nombre, SKU, categoría…" />
+              <mat-icon matSuffix>search</mat-icon>
+            </mat-form-field>
+
+            <mat-form-field class="w-full">
+              <mat-label>Categoría</mat-label>
+              <mat-select [(ngModel)]="selectedCategory" (ngModelChange)="onCategoryChange()">
+                <mat-option value="">Todas las categorías</mat-option>
+                <mat-option *ngFor="let category of categories" [value]="category">{{ category }}</mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <div class="flex items-center gap-2">
+              <button
+                mat-stroked-button
+                type="button"
+                (click)="clearFilters()"
+                [disabled]="!searchTerm && !selectedCategory">
+                <mat-icon>refresh</mat-icon> Limpiar
+              </button>
+            </div>
+          </div>
         </mat-card-content>
       </mat-card>
 
@@ -146,6 +168,8 @@ import { StockMovementComponent } from './stock-movement.component';
 export class PartsListComponent implements OnInit, OnDestroy {
   parts: SparePart[] = [];
   filteredParts: SparePart[] = [];
+  categories: string[] = [];
+  selectedCategory = '';
   loading = false;
   searchTerm = '';
   activePart: SparePart | null = null;
@@ -160,6 +184,7 @@ export class PartsListComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
+    this.loadCategories();
     this.loadParts();
   }
 
@@ -170,7 +195,8 @@ export class PartsListComponent implements OnInit, OnDestroy {
 
   loadParts(): void {
     this.loading = true;
-    this.sparePartService.getAll()
+    const categories = this.selectedCategory ? [this.selectedCategory] : [];
+    this.sparePartService.getAll(categories)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: data => {
@@ -185,6 +211,15 @@ export class PartsListComponent implements OnInit, OnDestroy {
       });
   }
 
+  loadCategories(): void {
+    this.sparePartService.getCategories()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: categories => this.categories = categories,
+        error: () => this.snackBar.open('Error al cargar las categorías', 'Cerrar', { duration: 3000 })
+      });
+  }
+
   applyFilter(): void {
     const term = this.searchTerm.toLowerCase();
     this.filteredParts = this.parts.filter(p =>
@@ -193,6 +228,16 @@ export class PartsListComponent implements OnInit, OnDestroy {
       p.sku.toLowerCase().includes(term) ||
       p.category.toLowerCase().includes(term)
     );
+  }
+
+  onCategoryChange(): void {
+    this.loadParts();
+  }
+
+  clearFilters(): void {
+    this.searchTerm = '';
+    this.selectedCategory = '';
+    this.loadParts();
   }
 
   onAdd(): void {

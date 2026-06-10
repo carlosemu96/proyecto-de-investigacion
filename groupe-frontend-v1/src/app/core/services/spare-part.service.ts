@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
 import { environment } from 'environments/environment';
 import { SparePart, MOCK_SPARE_PARTS } from '../models/spare-part.model';
@@ -10,9 +10,32 @@ export class SparePartService {
 
   constructor(private http: HttpClient) {}
 
-  getAll(): Observable<SparePart[]> {
-    if (environment.useMockData) return of(MOCK_SPARE_PARTS);
-    return this.http.get<SparePart[]>(this.apiUrl);
+  getAll(categories: string[] = []): Observable<SparePart[]> {
+    const normalizedCategories = this.normalizeCategories(categories);
+    if (environment.useMockData) {
+      const parts = normalizedCategories.length
+        ? MOCK_SPARE_PARTS.filter(part => normalizedCategories.includes(part.category))
+        : MOCK_SPARE_PARTS;
+      return of(parts);
+    }
+
+    let params = new HttpParams();
+    normalizedCategories.forEach(category => {
+      params = params.append('categories', category);
+    });
+    return this.http.get<SparePart[]>(this.apiUrl, { params });
+  }
+
+  getCategories(): Observable<string[]> {
+    if (environment.useMockData) {
+      const categories = Array.from(new Set(
+        MOCK_SPARE_PARTS
+          .map(part => part.category?.trim())
+          .filter((category): category is string => !!category)
+      )).sort();
+      return of(categories);
+    }
+    return this.http.get<string[]>(`${this.apiUrl}/categories`);
   }
 
   getById(id: string): Observable<SparePart> {
@@ -52,5 +75,13 @@ export class SparePartService {
   delete(id: string): Observable<void> {
     if (environment.useMockData) return of(void 0);
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
+  }
+
+  private normalizeCategories(categories: string[]): string[] {
+    return Array.from(new Set(
+      categories
+        .map(category => category.trim())
+        .filter(category => !!category)
+    ));
   }
 }

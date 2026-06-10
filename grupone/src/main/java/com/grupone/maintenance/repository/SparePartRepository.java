@@ -9,5 +9,7 @@ import java.util.Optional;
 public interface SparePartRepository extends MongoRepository<SparePart, String> {
     Optional<SparePart> findBySku(String sku);
 
+    List<SparePart> findByCategoryIn(List<String> categories);
+
     List<SparePart> findByStockLessThanEqual(Integer stock);
 }
